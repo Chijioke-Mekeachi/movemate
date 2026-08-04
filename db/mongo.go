@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"time"
 
@@ -19,7 +20,14 @@ func init() {
 func ConnectMongo() error {
 	uri := os.Getenv("MONGO_URI")
 	if uri == "" {
-		uri = "mongodb://localhost:27017"
+		mongoUser := os.Getenv("MONGO_USER")
+		mongoPassword := os.Getenv("MONGO_PASSWORD")
+		mongoHost := os.Getenv("MONGO_HOST")
+		if mongoUser != "" && mongoPassword != "" && mongoHost != "" {
+			uri = fmt.Sprintf("mongodb+srv://%s:%s@%s/?appName=Movemate", mongoUser, mongoPassword, mongoHost)
+		} else {
+			uri = "mongodb://localhost:27017"
+		}
 	}
 
 	dbName := os.Getenv("MONGO_DB_NAME")
