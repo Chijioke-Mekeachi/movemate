@@ -1,7 +1,16 @@
 package main
 
+// import (
+// 	"net/http"
+// 	"token/models"
+// 	"token/routes"
+
+// 	"github.com/gin-gonic/gin"
+// )
 import (
+	"log"
 	"net/http"
+	"os"
 	"token/models"
 	"token/routes"
 
@@ -29,13 +38,12 @@ func CORSMiddleware() gin.HandlerFunc {
 	}
 }
 
+
 func main() {
 	router := gin.Default()
 
-	// Apply CORS middleware
 	router.Use(CORSMiddleware())
 
-	// Health check
 	router.GET("/", HomeApi)
 
 	// Shipment endpoints
@@ -56,5 +64,14 @@ func main() {
 	router.POST("/admin/login", routes.AdminLogin)
 	router.POST("/admin/logout", routes.AdminLogout)
 
-	router.Run("localhost:8081")
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8081" // Local development
+	}
+
+	log.Printf("Server running on port %s", port)
+
+	if err := router.Run(":" + port); err != nil {
+		log.Fatal(err)
+	}
 }
