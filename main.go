@@ -11,6 +11,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"token/db"
 	"token/models"
 	"token/routes"
 
@@ -38,8 +39,11 @@ func CORSMiddleware() gin.HandlerFunc {
 	}
 }
 
-
 func main() {
+	if err := db.ConnectMongo(); err != nil {
+		log.Fatalf("MongoDB connection failed: %v", err)
+	}
+
 	router := gin.Default()
 
 	router.Use(CORSMiddleware())

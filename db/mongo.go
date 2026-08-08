@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
 	"time"
 
@@ -14,7 +15,9 @@ var MongoClient *mongo.Client
 var ShipmentCollection *mongo.Collection
 
 func init() {
-	_ = ConnectMongo()
+	if err := ConnectMongo(); err != nil {
+		log.Fatalf("failed to connect to MongoDB: %v", err)
+	}
 }
 
 func ConnectMongo() error {
