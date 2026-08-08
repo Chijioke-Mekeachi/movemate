@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	"go.mongodb.org/mongo-driver/v2/mongo"
@@ -20,12 +21,26 @@ func init() {
 	}
 }
 
+func isPlaceholderURI(uri string) bool {
+	lower := strings.ToLower(uri)
+	return strings.Contains(lower, "<password>") || strings.Contains(lower, "<username>") || strings.Contains(lower, "<user>") || strings.Contains(lower, "<host>")
+}
+
 func ConnectMongo() error {
 	uri := os.Getenv("MONGO_URI")
+	mongoUser := os.Getenv("MONGO_USER")
+	mongoPassword := os.Getenv("MONGO_PASSWORD")
+	mongoHost := os.Getenv("MONGO_HOST")
+
+	if uri != "" && isPlaceholderURI(uri) {
+		if mongoUser != "" && mongoPassword != "" && mongoHost != "" {
+			uri = fmt.Sprintf("mongodb+srv://%s:%s@%s/?appName=Movemate", mongoUser, mongoPassword, mongoHost)
+		} else {
+			return fmt.Errorf("invalid MONGO_URI placeholder detected; set a valid MONGO_URI or provide MONGO_USER, MONGO_PASSWORD, and MONGO_HOST")
+		}
+	}
+
 	if uri == "" {
-		mongoUser := os.Getenv("MONGO_USER")
-		mongoPassword := os.Getenv("MONGO_PASSWORD")
-		mongoHost := os.Getenv("MONGO_HOST")
 		if mongoUser != "" && mongoPassword != "" && mongoHost != "" {
 			uri = fmt.Sprintf("mongodb+srv://%s:%s@%s/?appName=Movemate", mongoUser, mongoPassword, mongoHost)
 		} else {
