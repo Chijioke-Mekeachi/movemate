@@ -21,6 +21,36 @@ func generateShipmentID(seed string) string {
 	return hex.EncodeToString(hash[:])
 }
 
+// generateFriendlyTrackingID creates a tracking id in the format MM-LX-XXXXX
+// where XXXXX is a 5 character alphanumeric string. It is returned in lower-case
+// for consistent storage/lookup in the database.
+func generateFriendlyTrackingID() string {
+	const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	b := make([]byte, 5)
+	for i := range b {
+		b[i] = chars[int(time.Now().UnixNano()+int64(i))%len(chars)]
+	}
+	// mix with a small random-ish component using md5 of timestamp to reduce collisions
+	hash := md5.Sum([]byte(fmt.Sprintf("%d", time.Now().UnixNano())))
+	hexpart := hex.EncodeToString(hash[:])
+	// take alphanumeric characters from hexpart until we have 5 chars if needed
+	var extra []byte
+	for i := 0; i < len(hexpart) && len(extra) < 5; i++ {
+		c := hexpart[i]
+		if (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') {
+			extra = append(extra, c)
+		}
+	}
+	// fallback: if extra is short, fill with '0'
+	for len(extra) < 5 {
+		extra = append(extra, '0')
+	}
+
+	// produce final 5-char code mixing b and extra then uppercase and lowercase for storage
+	code := fmt.Sprintf("%c%c%c%c%c", b[0], b[1], extra[0], extra[1], extra[2])
+	return strings.ToLower(fmt.Sprintf("MM-LX-%s", code))
+}
+
 func CreateShipment(shipForm models.ShipmentFormData) (*models.Shipment, error) {
 	if db.ShipmentCollection == nil {
 		return nil, mongo.ErrNilDocument
@@ -30,7 +60,7 @@ func CreateShipment(shipForm models.ShipmentFormData) (*models.Shipment, error) 
 	now := time.Now().UTC().Format(time.RFC3339)
 	shipment := models.Shipment{
 		Id:                shipmentID,
-		TrackingId:        shipmentID,
+		TrackingId:        generateFriendlyTrackingID(),
 		Status:            "pending",
 		Sender:            shipForm.Sender,
 		Receiver:          shipForm.Receiver,

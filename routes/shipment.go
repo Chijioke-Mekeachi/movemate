@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"fmt"
 	"net/http"
 	"os"
 	"time"
@@ -129,6 +130,13 @@ func UpdateShipmentStatus(c *gin.Context) {
 	updates := models.ShipmentUpdate{
 		Status: &statusUpdate.Status,
 	}
+
+	// Record a simple timeline string combining status and optional location
+	timelineText := statusUpdate.Status
+	if statusUpdate.Location != "" {
+		timelineText = fmt.Sprintf("%s - %s", statusUpdate.Status, statusUpdate.Location)
+	}
+	updates.TimeLine = &timelineText
 
 	if statusUpdate.Status == "delivered" {
 		updates.DeliveryAt = &now
